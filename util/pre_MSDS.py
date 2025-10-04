@@ -176,11 +176,15 @@ for path, dir_lst, file_lst in os.walk(os.path.join(Raw_Path, 'traces')):
         name = file_name.split('.')[0]
         readtrace(data, base_trace=name, name='start', isfirst=True)
 trace = pd.DataFrame(TRACERESULT, columns=['cmbd_id', 'start_time', 'end_time', 'stats', 'span_id', 'parentspan_id', 'base_trace', 'fatherpod'])
-trace['start_time'], trace['start_sec'] = trace['start_time'].str.split('.').str
+split_data = trace['start_time'].str.split('.')
+trace['start_time'] = split_data.str[0]
+trace['start_sec'] = split_data.str[1]
 trace['start_time'] = trace['start_time'].map(lambda x: time.mktime(time.strptime(x, '%Y-%m-%dT%H:%M:%S')))
 trace['end_time'].replace('wrong', np.nan, inplace=True)
-trace['end_time'].fillna(method='ffill', inplace=True)
-trace['end_time'], trace['end_sec'] = trace['end_time'].str.split('.').str
+trace['end_time'] = trace['end_time'].ffill()
+split_data = trace['end_time'].str.split('.')
+trace['end_time'] = split_data.str[0]
+trace['end_sec'] = split_data.str[1]
 trace['end_time'] = trace['end_time'].map(lambda x: time.mktime(time.strptime(x, '%Y-%m-%dT%H:%M:%S')))
 
 logger.info('deal relation')

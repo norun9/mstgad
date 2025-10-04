@@ -15,6 +15,9 @@ Install other dependencies can be installed by:
 
     pip install -r requirements.txt
 
+    pip install torch-sparse -f https://data.pyg.org/whl/torch-2.8.0+cpu.html
+    pip install torch-scatter -f https://data.pyg.org/whl/torch-2.8.0+cpu.html
+
 ## Dataset
 The MSDS datasets  used in this paper can be downloaded from the [Multi-Source Distributed System Data for AI-powered Analytics | Zenodo](https://zenodo.org/record/3549604)
 
