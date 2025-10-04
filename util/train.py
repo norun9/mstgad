@@ -34,12 +34,29 @@ class Base(nn.Module):
             logging.info('model : init weight')
             self.init_weight()
 
-        if args['gpu'] and torch.cuda.is_available():
-            logging.info("Using GPU...")
+        # GPU/CPU auto-detection and setup
+        if args['gpu'] is None:
+            # Auto-detect GPU availability
+            self.use_gpu = torch.cuda.is_available()
+            if self.use_gpu:
+                logging.info("GPU detected and available - Using GPU...")
+            else:
+                logging.info("No GPU detected - Using CPU...")
+        else:
+            # User explicitly specified GPU usage
+            self.use_gpu = args['gpu'] and torch.cuda.is_available()
+            if args['gpu'] and not torch.cuda.is_available():
+                logging.warning("GPU requested but not available - Falling back to CPU...")
+            elif self.use_gpu:
+                logging.info("Using GPU as requested...")
+            else:
+                logging.info("Using CPU as requested...")
+
+        if self.use_gpu:
             torch.cuda.empty_cache()
             self.model.cuda()
-        else:
-            logging.info("Using CPU...")
+            logging.info(f"GPU Device: {torch.cuda.get_device_name(0)}")
+            logging.info(f"GPU Memory: {torch.cuda.get_device_properties(0).total_memory / 1024**3:.1f} GB")
 
     # Model init
     def init_weight(self):
@@ -94,7 +111,14 @@ class MY(Base):
         super().__init__(model, **args)
 
     def fit(self, train_loader, test_loader, **args):
-        optimizer = AdaBelief(self.model.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
+        optimizer = AdaBelief(
+            self.model.parameters(),
+            lr=self.learning_rate,
+            weight_decay=self.weight_decay,
+            eps=1e-16,
+            weight_decouple=True,
+            rectify=True
+        )
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, self.learning_change, self.learning_gamma)
 
         best = {"loss":{"score": float("inf"), "state": None, "epoch": 0},
@@ -103,7 +127,9 @@ class MY(Base):
         pre_loss, worse_count, isWrong = float("inf"), 0, False
 
         label_weight = torch.tensor(
-            np.array(list(self.True_list.values())), dtype=torch.float).cuda()
+            np.array(list(self.True_list.values())), dtype=torch.float)
+        if self.use_gpu:
+            label_weight = label_weight.cuda()
         losser = nn.BCEWithLogitsLoss(reduce='mean', weight=label_weight)
         logging.info('optimizer : using AdaBelief')
 
@@ -126,7 +152,9 @@ class MY(Base):
 
                     rec_loss = sum(raw_loss)
                     if cls_result.shape[0] == 0:
-                        cls_loss = torch.tensor(0, dtype=torch.float).cuda()
+                        cls_loss = torch.tensor(0, dtype=torch.float)
+                        if self.use_gpu:
+                            cls_loss = cls_loss.cuda()
                     else:
                         cls_loss = losser(cls_result, cls_label)
 
