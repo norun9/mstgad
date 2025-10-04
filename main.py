@@ -4,6 +4,7 @@ import util.data_MSDS as data_loads
 from util.parser_MSDS import *
 
 from torch.utils.data import DataLoader
+import torch
 import warnings
 import logging
 import os
@@ -14,6 +15,14 @@ sys.path.append('/code')
 warnings.filterwarnings("ignore")
 
 util.seed_everything(args['random_seed'])
+
+# Auto-detect GPU if not specified
+if args['gpu'] is None:
+    args['gpu'] = torch.cuda.is_available()
+    if args['gpu']:
+        print(f"Auto-detected GPU: {torch.cuda.get_device_name(0)}")
+    else:
+        print("Auto-detected: No GPU available, using CPU")
 
 if __name__ == '__main__':
     if args['evaluate']:

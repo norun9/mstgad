@@ -8,7 +8,11 @@ class MyModel(nn.Module):
 	def __init__(self, graph, **args):
 		super(MyModel, self).__init__()
 		self.name = 'my'
-		self.graph = torch.tensor(graph).cuda()
+		self.use_gpu = args.get('gpu', False) and torch.cuda.is_available()
+
+		self.graph = torch.tensor(graph)
+		if self.use_gpu:
+			self.graph = self.graph.cuda()
 		self.label_weight = args['label_weight']
 
 		adj = dense_to_sparse(self.graph)[0]
@@ -51,7 +55,7 @@ class MyModel(nn.Module):
 		z_node, z_edge, z_log = self.encoder(x_node, x_edge, x_log)
 		node, edge, log = self.decoder(d_node, d_edge, d_log, z_node, z_edge, z_log)
         
-		l_edge = torch.masked_select(x['data_edge'], self.graph.unsqueeze(-1).repeat(1, 1, x['data_edge'].shape[-1]).byte()) \
+		l_edge = torch.masked_select(x['data_edge'], self.graph.unsqueeze(-1).repeat(1, 1, x['data_edge'].shape[-1]).bool()) \
 			.reshape(x['data_edge'].shape[0], x['data_edge'].shape[1], -1, x['data_edge'].shape[-1])
 
 		rec_node = torch.square(self.dense_node(node) - x['data_node'])
