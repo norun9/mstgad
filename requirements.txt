@@ -1,9 +1,11 @@
+torch==2.8.0
+torchvision==0.23.0
+numpy==1.26.4
+torch-geometric
 adabelief-pytorch==0.2.1
 drain3==0.9.11
 jsonpickle==1.5.1
 matplotlib==3.9.2
-numpy==1.26.4
 pandas==2.2.3
 scikit-learn==1.5.2
 tqdm==4.66.5
-torch-geometric==2.2.0
