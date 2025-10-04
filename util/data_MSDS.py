@@ -63,9 +63,9 @@ class Process:
         time_list = [item for item in range(int(timestart), int(timeend)+1, 1)]
         time_lack = list(set(time_list).difference(set(metirc['now'].values.tolist())))
         for stamp in time_lack:
-            metirc = metirc.append([{'now':stamp}])
+            metirc = pd.concat([metirc, pd.DataFrame([{'now':stamp}])], ignore_index=True)
         metirc = metirc.sort_values(by='now', ascending=True)
-        metirc.fillna(method='ffill', inplace=True)
+        metirc = metirc.ffill()
         name_list = list(filter(lambda x: 'mem' in x, list(metirc.columns)))
         after_name = list(map(lambda x: f'{x.split("_")[0]}_a{x.split("_")[-1]}',name_list))
         name_dict = {name_list[idx]: after_name[idx] for idx, _ in enumerate(name_list)}
